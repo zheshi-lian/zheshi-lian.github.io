@@ -51,9 +51,10 @@
     slotEl.id = slotId;
     var chan = getChan();
     var imp = chan + '_' + rand();
+    var kw = slotEl.dataset.kw || CFG.kw; // 广告位级关键词：不填则用页面级 data-kw
     var ctx = {
       id: imp,
-      site: { domain: CFG.site, keywords: CFG.kw },
+      site: { domain: CFG.site, keywords: kw },
       imp: [{ id: imp, bidfloor: parseFloat(slotEl.dataset.floor || '2.0'), ext: { cat: slotEl.dataset.cat || 'social' } }],
       device: { geo: { country: 'CN' } }
     };
