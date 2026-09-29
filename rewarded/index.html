@@ -2,85 +2,111 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>App 激励视频 ADX · 实时演示</title>
+<title>App 激励视频 ADX · 实时演示（服务端完播校验版）</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
   *{box-sizing:border-box}
   body{margin:0;font-family:'Microsoft YaHei',system-ui,sans-serif;background:#0b1220;color:#e5e7eb}
-  header{padding:20px 24px;border-bottom:1px solid #1f2937}
-  h1{font-size:20px;margin:0 0 6px}
+  header{padding:18px 24px;border-bottom:1px solid #1f2937}
+  h1{font-size:19px;margin:0 0 6px}
   header p{margin:0;color:#94a3b8;font-size:13px}
-  .cols{display:flex;gap:20px;padding:20px 24px;flex-wrap:wrap}
-  .phone{width:340px;background:#111827;border:10px solid #374151;border-radius:32px;padding:12px;min-height:520px}
-  .screen{text-align:center}
-  .game-title{font-size:16px;font-weight:700;margin-top:28px}
-  .fail{color:#f87171;font-size:15px;margin:10px 0 18px}
-  button{background:#f59e0b;color:#111827;border:0;border-radius:8px;padding:12px 16px;font-size:15px;font-weight:700;cursor:pointer;width:100%}
-  .tip{color:#64748b;font-size:12px;margin-top:10px}
-  .slot{margin-top:16px;min-height:80px}
-  .reward{margin-top:14px;background:#065f46;color:#ecfdf5;border-radius:8px;padding:12px;font-size:14px}
-  .log{flex:1;min-width:380px;background:#111827;border:1px solid #1f2937;border-radius:12px;padding:16px}
-  .log h3{margin:0 0 10px;font-size:15px}
-  ol{margin:0;padding-left:20px;font-size:13px;line-height:2}
+  .cols{display:flex;gap:18px;padding:18px 24px;flex-wrap:wrap}
+  .phone{width:330px;background:#111827;border:10px solid #374151;border-radius:30px;padding:12px;min-height:500px}
+  .game-title{font-size:16px;font-weight:700;margin-top:24px;text-align:center}
+  .fail{color:#f87171;font-size:15px;margin:10px 0 16px;text-align:center}
+  button{background:#f59e0b;color:#111827;border:0;border-radius:8px;padding:11px 14px;font-size:14px;font-weight:700;cursor:pointer;width:100%}
+  button.danger{background:#dc2626;color:#fff}
+  button.ghost{background:#1f2937;color:#e5e7eb}
+  .tip{color:#64748b;font-size:12px;margin-top:10px;text-align:center}
+  .slot{margin-top:14px;min-height:70px}
+  .reward{margin-top:12px;background:#065f46;color:#ecfdf5;border-radius:8px;padding:11px;font-size:13px}
+  .rejected{margin-top:12px;background:#7f1d1d;color:#fee2e2;border-radius:8px;padding:11px;font-size:13px}
+  .panel{flex:1;min-width:400px;display:flex;flex-direction:column;gap:12px}
+  .box{background:#111827;border:1px solid #1f2937;border-radius:10px;padding:14px}
+  .box h3{margin:0 0 8px;font-size:14px}
+  ol{margin:0;padding-left:20px;font-size:12.5px;line-height:1.9}
   li{color:#64748b}
   li.done{color:#34d399}
   li.active{color:#fbbf24}
-  pre{background:#0b1220;border:1px solid #1f2937;border-radius:8px;padding:10px;font-size:11px;max-height:200px;overflow:auto;white-space:pre-wrap;color:#a5b4fc}
+  pre{background:#0b1220;border:1px solid #1f2937;border-radius:8px;padding:10px;font-size:11px;max-height:170px;overflow:auto;white-space:pre-wrap;color:#a5b4fc}
+  .atk{display:flex;gap:8px;flex-wrap:wrap}
+  .atk button{width:auto;flex:1;min-width:110px;font-size:12px;padding:9px}
+  .kv{font-size:12px;color:#94a3b8;line-height:1.8}
+  .kv b{color:#fbbf24;font-family:monospace}
 </style>
 </head>
 <body>
 <header>
   <h1>App 激励视频 ADX · 实时演示</h1>
-  <p>链路：App 触发奖励点 → ADX 竞价 → 视频创意 → 曝光播放 → <b>完播</b> → 发放奖励 → 转化回传 → 预算扣减</p>
+  <p>链路：App 触发 → ADX 竞价 → <b>下发签名令牌</b> → 视频播放 → 上报观看证据 → <b>服务端裁决</b> → 发放奖励 / 拒绝</p>
 </header>
 
 <div class="cols">
-  <!-- 模拟 App 界面 -->
   <div class="phone">
-    <div class="screen">
-      <div id="gameBox">
-        <div class="game-title">方块消除 · 第 27 关</div>
-        <p class="fail">挑战失败</p>
-        <button id="watchBtn">🎬 看视频复活</button>
-        <p class="tip">奖励：<span id="rwName">复活道具×1</span>（需看完视频）</p>
-      </div>
-      <div class="slot rw-slot" id="adSlot"
-           data-base="https://calendar.dellai.xyz"
-           data-site="dellai.xyz"
-           data-kw="休闲游戏,激励视频,rewarded,消除"
-           data-reward="复活道具×1"></div>
-      <div class="reward" id="rewardBox" style="display:none">✅ 奖励已发放：<b id="rewardText"></b></div>
-    </div>
+    <div class="game-title">方块消除 · 第 27 关</div>
+    <p class="fail">挑战失败</p>
+    <button id="watchBtn">🎬 看视频复活</button>
+    <p class="tip">奖励：<span id="rwName">复活道具×1</span>（需看完，服务端判定）</p>
+    <div class="slot rw-slot" id="adSlot"
+         data-base="https://calendar.dellai.xyz"
+         data-site="dellai.xyz"
+         data-kw="休闲游戏,激励视频,rewarded,消除"
+         data-reward="复活道具×1"></div>
+    <div class="reward" id="rewardBox" style="display:none"></div>
   </div>
 
-  <!-- ADX 实时链路日志 -->
-  <div class="log">
-    <h3>ADX 实时链路</h3>
-    <ol id="steps">
-      <li data-step="0">App 触发奖励点（SDK.show）</li>
-      <li data-step="1">ADX 竞价 /ssp/bid</li>
-      <li data-step="2">返回胜出创意（VAST/video）</li>
-      <li data-step="3">渲染播放 + 曝光计费</li>
-      <li data-step="4">用户完播（ended）</li>
-      <li data-step="5">发放奖励 + 转化回传 /api/track/conversion</li>
-    </ol>
-    <pre id="raw">等待触发…</pre>
+  <div class="panel">
+    <div class="box">
+      <h3>① ADX 实时链路</h3>
+      <ol id="steps">
+        <li>App 触发奖励点</li>
+        <li>ADX 竞价 /ssp/bid（二价）</li>
+        <li>下发一次性签名令牌 rw(HMAC)</li>
+        <li>渲染视频 + 曝光计费</li>
+        <li>用户观看（完播判定）</li>
+        <li>上报观看证据 /ssp/reward</li>
+        <li>服务端裁决 → 发放 / 拒绝</li>
+      </ol>
+    </div>
+    <div class="box">
+      <h3>② 令牌与上报数据</h3>
+      <div class="kv" id="kvBox">尚未触发</div>
+    </div>
+    <div class="box">
+      <h3>③ 反作弊验证（亲自点一下）</h3>
+      <div class="atk">
+        <button class="danger" id="atkNoToken">伪造：不带令牌</button>
+        <button class="danger" id="atkBadSig">伪造：篡改令牌</button>
+        <button class="danger" id="atkShort">伪造：谎报完播时长</button>
+        <button class="danger" id="atkReplay">重放：令牌二次兑换</button>
+      </div>
+      <pre id="atkLog">等待一次正常完播后即可测试 ↑</pre>
+    </div>
+    <div class="box">
+      <h3>④ 原始报文</h3>
+      <pre id="raw">等待触发…</pre>
+    </div>
   </div>
 </div>
 
 <script src="../rewarded_sdk.js"></script>
 <script>
+  var BASE = 'https://calendar.dellai.xyz';
   var steps = document.querySelectorAll('#steps li');
-  function mark(i, cls) {
+  var last = { imp: null, cid: null, rw: null };
+
+  function mark(i, done) {
     for (var k = 0; k < steps.length; k++) steps[k].className = '';
     for (var j = 0; j < i; j++) steps[j].className = 'done';
-    if (steps[i]) steps[i].className = cls || 'active';
+    if (steps[i]) steps[i].className = done ? 'done' : 'active';
   }
-  function log(obj) { document.getElementById('raw').textContent = JSON.stringify(obj, null, 2); }
+  function log(o) { document.getElementById('raw').textContent = JSON.stringify(o, null, 2); }
+  function kv(html) { document.getElementById('kvBox').innerHTML = html; }
 
   document.getElementById('watchBtn').onclick = function () {
     var slot = document.getElementById('adSlot');
     document.getElementById('rewardBox').style.display = 'none';
+    document.getElementById('rewardBox').className = 'reward';
     slot.innerHTML = '';
     mark(1);
 
@@ -88,24 +114,65 @@
       onRequest: function (req) { log({ bidRequest: req }); },
       onBid: function (ssp) {
         var b = ssp.seatbid && ssp.seatbid[0] && ssp.seatbid[0].bid && ssp.seatbid[0].bid[0];
-        mark(2);
-        if (b) {
-          log({ bidResponse: { price: b.price, priceMicros: b.price * 1000000, cid: b.ext && b.ext.cid, admHasVideo: String(b.adm).indexOf('<video') >= 0 } });
-          setTimeout(function () { mark(3); }, 200);
-        } else {
-          log({ bidResponse: ssp || 'NO_FILL' });
-        }
+        if (!b) { log({ bidResponse: ssp || 'NO_FILL' }); return; }
+        var rw = b.ext && b.ext.rw, cid = b.ext && b.ext.cid;
+        last.imp = b.impid; last.cid = cid; last.rw = rw;
+        mark(2, true);
+        kv('令牌 <b>' + String(rw && rw.token).slice(0, 24) + '…</b><br>' +
+           '绑定 impid=<b>' + rw.impid + '</b> cid=<b>' + rw.cid + '</b><br>' +
+           '有效期 <b>' + (b.ext.rw_ttl_ms / 1000) + 's</b>，完播阈值 <b>' + (b.ext.rw_min_ratio * 100) + '%</b><br>' +
+           '成交价 <b>' + b.price + '</b> micros = <b>' + (b.price / 1e6).toFixed(2) + ' 元 CPM</b>');
+        log({ bidResponse: { price: b.price, cid: cid, ext_rw: { impid: rw.impid, cid: rw.cid, ts: rw.ts, token: String(rw.token).slice(0, 24) + '...' } } });
+        setTimeout(function () { mark(3); }, 150);
       },
-      onRender: function () { mark(3); },
-      onStart: function () { mark(4); },
-      onComplete: function (reward) {
-        mark(6, 'done');
-        document.getElementById('rewardText').textContent = reward;
-        document.getElementById('rewardBox').style.display = 'block';
+      onRender: function () { mark(4); },
+      onStart: function () { mark(5); },
+      onClaim: function (e) { mark(6); kv(document.getElementById('kvBox').innerHTML + '<br>上报观看 <b>' + e.watchedMs + 'ms</b> / 时长 <b>' + e.durationMs + 'ms</b>'); },
+      onComplete: function (reward, res) {
+        mark(7, true);
+        var box = document.getElementById('rewardBox');
+        box.className = 'reward'; box.style.display = 'block';
+        box.innerHTML = '✅ 服务端裁决通过：发放 <b>' + reward + '</b><br><span style="opacity:.8">ratio=' + res.ratio + ' counted=' + res.counted + '</span>';
       },
-      onSkip: function () { if (document.getElementById('rewardBox').style.display === 'none') { mark(4, 'active'); } },
+      onRejected: function (why) {
+        var box = document.getElementById('rewardBox');
+        box.className = 'rejected'; box.style.display = 'block';
+        box.innerHTML = '⛔ 服务端拒绝发放：<b>' + why + '</b>';
+      },
       onError: function (e) { log({ error: e }); }
     });
+  };
+
+  function probe(name, body) {
+    return fetch(BASE + '/ssp/reward', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    }).then(function (r) {
+      return r.text().then(function (t) { return { code: r.status, body: t }; });
+    }).then(function (r) {
+      document.getElementById('atkLog').textContent += '\n[' + name + '] HTTP ' + r.code + ' ' + r.body;
+      return r;
+    }).catch(function (e) {
+      document.getElementById('atkLog').textContent += '\n[' + name + '] 网络错误 ' + e.message;
+    });
+  }
+
+  document.getElementById('atkNoToken').onclick = function () {
+    document.getElementById('atkLog').textContent = '';
+    probe('不带令牌', { impid: last.imp, cid: last.cid, publisher: 'dellai.xyz', watchedMs: 30000, durationMs: 30000 });
+  };
+  document.getElementById('atkBadSig').onclick = function () {
+    document.getElementById('atkLog').textContent = '';
+    probe('篡改令牌', { impid: last.imp, cid: last.cid, publisher: 'dellai.xyz',
+      rw: { impid: last.imp, cid: last.cid, pub: 'dellai.xyz', ts: Date.now(), token: 'deadbeef' },
+      watchedMs: 30000, durationMs: 30000 });
+  };
+  document.getElementById('atkShort').onclick = function () {
+    document.getElementById('atkLog').textContent = '';
+    probe('谎报完播', { impid: last.imp, cid: last.cid, publisher: 'dellai.xyz', rw: last.rw, watchedMs: 600, durationMs: 30000 });
+  };
+  document.getElementById('atkReplay').onclick = function () {
+    document.getElementById('atkLog').textContent = '';
+    probe('令牌重放', { impid: last.imp, cid: last.cid, publisher: 'dellai.xyz', rw: last.rw, watchedMs: 30000, durationMs: 30000 });
   };
 </script>
 </body>
