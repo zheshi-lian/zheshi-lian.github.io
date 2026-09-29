@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>户外资料包 · 露营 / 登山 / 徒步必备</title>
+<meta name="description" content="城市周边露营路线、新手装备清单、营地搭建与徒步入门资料包，留邮箱/微信免费领。">
+<meta name="keywords" content="户外,露营,登山,徒步,户外装备,户外攻略,户外社群,爬山,野营">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body{font-family:'Microsoft YaHei',sans-serif;max-width:660px;margin:32px auto;padding:0 16px;line-height:1.75;color:#1f2937}
+  h1{font-size:24px;line-height:1.4;margin-bottom:8px}
+  .sub{color:#4b5563;font-size:15px;margin-bottom:4px}
+  .card{border:1px solid #e5e7eb;border-radius:10px;padding:16px 18px;margin:16px 0}
+  .toc li{margin:6px 0}
+  .tag{display:inline-block;background:#ecfdf5;color:#047857;font-size:12px;padding:3px 8px;border-radius:4px;margin-right:6px;margin-bottom:6px}
+  input,button{padding:11px 12px;margin-top:10px;width:100%;box-sizing:border-box;font-size:15px}
+  button{background:#16a085;color:#fff;border:0;border-radius:6px;font-weight:600;cursor:pointer}
+  .hint{color:#6b7280;font-size:13px}
+  .cta{font-size:16px;font-weight:700;color:#065f46}
+</style>
+</head>
+<body>
+<h1>户外资料包 · 露营 / 登山 / 徒步必备</h1>
+<p class="sub">城市周边路线 + 新手装备清单 + 营地搭建与徒步入门，免费领。</p>
+<p>
+  <span class="tag">免费</span>
+  <span class="tag">露营</span>
+  <span class="tag">登山</span>
+  <span class="tag">徒步</span>
+  <span class="tag">留邮箱即发</span>
+</p>
+
+<div class="card">
+  <strong>资料包里有什么</strong>
+  <ul class="toc">
+    <li><b>城市周边露营路线</b>：周末可往返的营地推荐 + 注意事项</li>
+    <li><b>新手装备清单</b>：10 件必带、别乱买的坑，按预算分级</li>
+    <li><b>营地搭建 & 徒步入门</b>：选址、防风保暖、不磨脚不迷路</li>
+    <li><b>户外社群</b>：同好交流、组队约伴</li>
+  </ul>
+</div>
+
+<!-- 广告位：由自有 bidder 竞价填充（campaign 58，kw=户外） -->
+<div class="card ad-slot" data-floor="2.0" data-cat="social">广告加载中…</div>
+
+<div class="card">
+  <p class="cta">留邮箱 / 微信，免费领资料包 🎒</p>
+  <form id="lead">
+    <input id="contact" placeholder="邮箱或微信号（发资料用）" required>
+    <button type="submit">提交，免费领取资料包</button>
+  </form>
+  <p id="ok" class="hint"></p>
+  <p class="hint">提交后 24 小时内发到你的邮箱 / 微信。</p>
+</div>
+
+<!-- 安装 SDK：本地用相对路径 ../../pub_sdk.js；发布后改用
+     https://cdn.jsdelivr.net/gh/zheshi-lian/你的仓库/pub_sdk.js -->
+<script
+  src="../pub_sdk.js"
+  data-base="https://calendar.dellai.xyz"
+  data-site="zheshi-lian.github.io"
+  data-kw="户外,露营,登山,徒步,户外装备,户外攻略,户外社群"
+  data-chan="xhs"></script>
+
+<script>
+document.getElementById('lead').onsubmit = async (e) => {
+  e.preventDefault();
+  var slot = document.querySelector('.ad-slot');
+  if (window.PUB_SDK && slot.dataset.cid) {
+    await PUB_SDK.trackConversion(slot.dataset.cid, slot.dataset.imp);
+  }
+  var chan = new URLSearchParams(location.search).get('utm_source') || 'direct';
+  document.getElementById('ok').textContent = '已提交 ✅ 资料会发给你（渠道=' + chan + '）';
+};
+</script>
+</body>
+</html>
