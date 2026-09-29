@@ -38,8 +38,9 @@
   </ul>
 </div>
 
-<!-- 广告位：由自有 bidder 竞价填充（campaign 13/57，kw=软考） -->
-<div class="card ad-slot" data-floor="2.0" data-cat="social">广告加载中…</div>
+<!-- 多广告位：每个 data-kw 独立竞价 → 不同主题 campaign 各自填充（软考 + 户外） -->
+<div class="card ad-slot" data-floor="2.0" data-cat="social" data-kw="软考,高项,信息系统项目管理师,论文,案例分析,挣值分析,关键路径,案例计算,软考高级,备考资料">广告加载中…（软考主题）</div>
+<div class="card ad-slot" data-floor="2.0" data-cat="social" data-kw="户外,露营,登山,徒步,户外装备,户外攻略,户外社群,爬山,野营">广告加载中…（户外主题）</div>
 
 <div class="card">
   <p class="cta">留邮箱 / 微信，免费领资料包 🎒</p>
@@ -51,16 +52,36 @@
   <p class="hint">提交后 24 小时内发到你的邮箱 / 微信。</p>
 </div>
 
+<!-- 百度云直接下载：点获取=记转化(conv_log)，再展示提取码 -->
+<div class="card" id="baidu" style="border-color:#16a085">
+  <p class="cta">📦 也可直接百度云下载（免费）</p>
+  <button type="button" id="getCode">获取百度云提取码</button>
+  <div id="codeBox" style="display:none;margin-top:12px;line-height:2">
+    链接：<a id="baiduUrl" href="https://pan.baidu.com/s/1eeUzOz8mM9iKm5kgEvlsSw" target="_blank" rel="noopener">https://pan.baidu.com/s/1eeUzOz8mM9iKm5kgEvlsSw</a><br>
+    提取码：<code id="code" style="font-size:16px;font-weight:700">8pvt</code>
+  </div>
+</div>
+
 <!-- 安装 SDK：本地用相对路径 ../../pub_sdk.js；发布后改用
      https://cdn.jsdelivr.net/gh/zheshi-lian/你的仓库/pub_sdk.js -->
-<script
-  src="../pub_sdk.js"
-  data-base="https://calendar.dellai.xyz"
-  data-site="zheshi-lian.github.io"
-  data-kw="软考,高项,信息系统项目管理师,论文,案例分析,挣值分析,关键路径,案例计算,软考高级,备考资料"
-  data-chan="xhs"></script>
+<script>
+  (function () {
+    var chan = new URLSearchParams(location.search).get('utm_source') || 'xhs';
+    var s = document.createElement('script');
+    s.src = '../pub_sdk.js';
+    s.dataset.base = 'https://calendar.dellai.xyz';
+    s.dataset.site = 'dellai.xyz';
+    s.dataset.kw = '软考,高项,信息系统项目管理师,论文,案例分析,挣值分析,关键路径,案例计算,软考高级,备考资料';
+    s.dataset.chan = chan;
+    document.head.appendChild(s);
+  })();
+</script>
 
 <script>
+// 投放平台转化回传钩子：拿到巨量/腾讯/小红书转化监测代码后填进此函数
+// 例（巨量网页转化追踪）：window.reportConv = () => { conv_pv('你的转化ID'); };
+window.reportConv = function () {};
+
 document.getElementById('lead').onsubmit = async (e) => {
   e.preventDefault();
   var slot = document.querySelector('.ad-slot');
@@ -69,6 +90,16 @@ document.getElementById('lead').onsubmit = async (e) => {
   }
   var chan = new URLSearchParams(location.search).get('utm_source') || 'direct';
   document.getElementById('ok').textContent = '已提交 ✅ 资料会发给你（渠道=' + chan + '）';
+  if (window.reportConv) window.reportConv(); // 平台转化上报（oCPA 优化用）
+};
+document.getElementById('getCode').onclick = async () => {
+  var slot = document.querySelector('.ad-slot');
+  if (window.PUB_SDK && slot.dataset.cid) {
+    await PUB_SDK.trackConversion(slot.dataset.cid, slot.dataset.imp); // 记转化，分渠道归因
+  }
+  document.getElementById('codeBox').style.display = 'block';
+  document.getElementById('getCode').textContent = '已领取 ✓';
+  if (window.reportConv) window.reportConv(); // 平台转化上报（主转化目标）
 };
 </script>
 </body>
