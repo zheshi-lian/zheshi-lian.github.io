@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>软考高项备考资料包 · 论文框架 + 案例计算套路</title>
+<meta name="description" content="信息系统项目管理师（高级）免费资料包：论文万能框架、案例计算套路（挣值/关键路径）、8 周备考规划，留邮箱/微信免费领。">
+<meta name="keywords" content="软考,高项,信息系统项目管理师,论文,案例分析,挣值分析,关键路径,案例计算,软考高级,备考资料">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body{font-family:'Microsoft YaHei',sans-serif;max-width:660px;margin:32px auto;padding:0 16px;line-height:1.75;color:#1f2937}
+  h1{font-size:24px;line-height:1.4;margin-bottom:8px}
+  .sub{color:#4b5563;font-size:15px;margin-bottom:4px}
+  .card{border:1px solid #e5e7eb;border-radius:10px;padding:16px 18px;margin:16px 0}
+  .toc li{margin:6px 0}
+  .tag{display:inline-block;background:#ecfdf5;color:#047857;font-size:12px;padding:3px 8px;border-radius:4px;margin-right:6px;margin-bottom:6px}
+  input,button{padding:11px 12px;margin-top:10px;width:100%;box-sizing:border-box;font-size:15px}
+  button{background:#16a085;color:#fff;border:0;border-radius:6px;font-weight:600;cursor:pointer}
+  .hint{color:#6b7280;font-size:13px}
+  .cta{font-size:16px;font-weight:700;color:#065f46}
+</style>
+</head>
+<body>
+<h1>软考高项（信息系统项目管理师）备考资料包</h1>
+<p class="sub">论文万能框架 + 案例计算套路（挣值 / 关键路径）+ 8 周备考规划，免费领。</p>
+<p>
+  <span class="tag">免费</span>
+  <span class="tag">信息系统项目管理师（高级）</span>
+  <span class="tag">留邮箱即发</span>
+</p>
+
+<div class="card">
+  <strong>资料包里有什么</strong>
+  <ul class="toc">
+    <li><b>论文万能框架</b>：项目背景 + 过渡 + 正文（逐条回应子题目）+ 结尾，附字数与时间分配</li>
+    <li><b>案例计算套路</b>：挣值分析（CV/SV/CPI/SPI/EAC）、关键路径与总时差、找茬题答题模板</li>
+    <li><b>8 周备考规划</b>：教材 → 案例 → 论文 → 真题节奏表，在职可执行</li>
+    <li><b>高频考点 + 考场避坑</b>：综合知识重点、论文 / 案例常见失分点</li>
+  </ul>
+</div>
+
+<!-- 广告位：由自有 bidder 竞价填充（campaign 13/57，kw=软考） -->
+<div class="card ad-slot" data-floor="2.0" data-cat="social">广告加载中…</div>
+
+<div class="card">
+  <p class="cta">留邮箱 / 微信，免费领资料包 🎒</p>
+  <form id="lead">
+    <input id="contact" placeholder="邮箱或微信号（发资料用）" required>
+    <button type="submit">提交，免费领取资料包</button>
+  </form>
+  <p id="ok" class="hint"></p>
+  <p class="hint">提交后 24 小时内发到你的邮箱 / 微信。</p>
+</div>
+
+<!-- 安装 SDK：本地用相对路径 ../../pub_sdk.js；发布后改用
+     https://cdn.jsdelivr.net/gh/zheshi-lian/你的仓库/pub_sdk.js -->
+<script
+  src="../pub_sdk.js"
+  data-base="https://calendar.dellai.xyz"
+  data-site="zheshi-lian.github.io"
+  data-kw="软考,高项,信息系统项目管理师,论文,案例分析,挣值分析,关键路径,案例计算,软考高级,备考资料"
+  data-chan="xhs"></script>
+
+<script>
+document.getElementById('lead').onsubmit = async (e) => {
+  e.preventDefault();
+  var slot = document.querySelector('.ad-slot');
+  if (window.PUB_SDK && slot.dataset.cid) {
+    await PUB_SDK.trackConversion(slot.dataset.cid, slot.dataset.imp);
+  }
+  var chan = new URLSearchParams(location.search).get('utm_source') || 'direct';
+  document.getElementById('ok').textContent = '已提交 ✅ 资料会发给你（渠道=' + chan + '）';
+};
+</script>
+</body>
+</html>
