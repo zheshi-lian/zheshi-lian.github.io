@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>PUB_SDK 演示页 · 装了就有广告位</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body{font-family:'Microsoft YaHei',sans-serif;max-width:680px;margin:32px auto;padding:0 16px;line-height:1.7;color:#1f2937}
+  .ad-slot{border:1px dashed #94a3b8;border-radius:10px;padding:16px;margin:18px 0;min-height:64px;color:#64748b}
+  .hint{color:#94a3b8;font-size:13px}
+  code{background:#f1f5f9;padding:2px 6px;border-radius:4px}
+  input,button{padding:10px;width:100%;box-sizing:border-box;font-size:15px}
+  button{margin-top:8px;background:#16a085;color:#fff;border:0;border-radius:6px;cursor:pointer}
+</style>
+</head>
+<body>
+<h1>PUB_SDK 演示页</h1>
+<p class="hint">这是给媒体站长的示例：下方广告位由 <code>pub_sdk.js</code> 自动填充，证明"一行引入就有广告位"。真实投放文案由你的 offer / 方向决定，不写在这一层。</p>
+
+<!-- 广告位：SDK 自动填充 -->
+<div class="ad-slot" data-floor="2.0" data-cat="social">广告位（加载中…）</div>
+
+<p>媒体自己的留资表单（示例），提交时调用 <code>PUB_SDK.trackConversion</code> 回传：</p>
+<form id="lead">
+  <input id="contact" placeholder="邮箱/微信" required>
+  <button type="submit">提交</button>
+</form>
+
+<!-- 安装 SDK：一行引入，自动填充上方 .ad-slot -->
+<!-- 本地自测用相对路径 ../pub_sdk.js；发布后媒体改用：
+     https://cdn.jsdelivr.net/gh/zheshi-lian/你的仓库/pub_sdk.js -->
+<script
+  src="./pub_sdk.js"
+  data-base="https://calendar.dellai.xyz"
+  data-site="demo.media.com"
+  data-kw="示例关键词"
+  data-chan="xhs"></script>
+
+<script>
+document.getElementById('lead').onsubmit = async (e) => {
+  e.preventDefault();
+  var slot = document.querySelector('.ad-slot');
+  await PUB_SDK.trackConversion(slot.dataset.cid, slot.dataset.imp);
+  alert('已提交，转化已回传');
+};
+</script>
+</body>
+</html>
