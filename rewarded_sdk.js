@@ -1,17 +1,16 @@
 /**
- * RW_SDK v0.2 —— App 激励视频 SDK（服务端完播校验版）
+ * RW_SDK v0.3 —— App 激励视频 SDK（VAST 4.0 + 服务端完播校验）
  *
- * 【核心安全模型】客户端不可自证完播
- *   1. ADX 竞价胜出时下发「一次性签名令牌」rw(HMAC-SHA256)，绑定 impid + cid + publisher + 时间戳
- *   2. 用户看完视频，SDK 只上报「观看证据」（watchedMs / durationMs）+ 令牌
- *   3. 是否发放奖励由 ADX 服务端裁决：
- *      令牌签名 → 是否过期 → 是否被兑换过(防重放) → 观看比例是否达标 → 是否对应真实曝光
- *   4. 客户端伪造调用会被拒绝，并记入 reward_log 审计表（status=REJECT_*）
+ * 【协议】ADX 返回 VAST 4.0 XML（行业标准），不是 HTML 片段：
+ *   <VAST version="4.0"><Ad><InLine>
+ *     <Impression/> <Creatives><Creative><Linear>
+ *       <Duration/> <TrackingEvents>(start/firstQuartile/midpoint/thirdQuartile/complete)</TrackingEvents>
+ *       <MediaFiles><MediaFile delivery="progressive" type="video/mp4">
+ *   SDK 解析出 MediaFile 播放，并按 TrackingEvents 回调 ADX 上报观看进度（imp.ext.protocol='html' 时可回退 HTML 创意）
  *
- * 用法：
- *   <div class="rw-slot" data-base="https://calendar.dellai.xyz" data-site="dellai.xyz"
- *        data-kw="休闲游戏,激励视频,rewarded" data-reward="复活道具×1"></div>
- *   RW_SDK.show(slot, { onRequest, onBid, onRender, onClaim, onComplete, onRejected, onSkip, onError })
+ * 【安全】客户端不可自证完播：上报观看证据 + 服务端签名令牌，由 ADX 裁决是否发奖。
+ *
+ * 回调 hooks：onRequest / onBid / onRender(bid,rw,meta) / onVastEvent(ev) / onClaim / onComplete / onRejected / onSkip / onError
  */
 (function () {
   'use strict';
@@ -32,8 +31,32 @@
   function post(url, body) {
     return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   }
+  function ping(url) { if (url) { fetch(url).catch(function () {}); } }
 
-  /** 向 ADX 服务端上报完播证据，由服务端裁决是否发奖 */
+  function isXml(adm) { return /^\s*(<\?xml|<VAST)/i.test(String(adm || '')); }
+
+  /** 解析 VAST XML → { mediaUrl, tracking:{event:url}, duration } */
+  function parseVast(adm) {
+    var doc;
+    try { doc = new DOMParser().parseFromString(adm, 'text/xml'); } catch (e) { return null; }
+    if (!doc) return null;
+    try { if (doc.getElementsByTagName('parsererror') && doc.getElementsByTagName('parsererror').length) return null; } catch (e) {}
+    if (!doc.querySelector('Linear')) return null;
+    var mf = doc.querySelector('MediaFile');
+    var mediaUrl = mf ? (mf.textContent || '').trim() : '';
+    var tracking = {};
+    var imps = doc.getElementsByTagName('Impression');
+    if (imps && imps.length) tracking.impression = (imps[0].textContent || '').trim();
+    var trs = doc.getElementsByTagName('Tracking') || [];
+    for (var i = 0; i < trs.length; i++) {
+      var ev = trs[i].getAttribute('event');
+      if (ev) tracking[ev] = (trs[i].textContent || '').trim();
+    }
+    var d = doc.querySelector('Duration');
+    return { mediaUrl: mediaUrl, tracking: tracking, duration: d ? (d.textContent || '').trim() : '' };
+  }
+
+  /** 上报完播证据，由服务端裁决发奖 */
   function claim(cfg, cid, imp, rw, video, h) {
     var watchedMs = Math.round((video.currentTime || 0) * 1000);
     var durationMs = Math.round((video.duration || 0) * 1000);
@@ -50,7 +73,6 @@
       .catch(function () { if (h.onError) h.onError('REWARD_NETWORK'); });
   }
 
-  /** 请求激励视频广告 → 渲染 → 完播上报（奖励由服务端决定） */
   function show(slotEl, hooks) {
     var h = hooks || {};
     var script = document.querySelector('script[src*="rewarded_sdk"]');
@@ -79,23 +101,65 @@
         var cid = bid.ext && bid.ext.cid;
         var rw = bid.ext && bid.ext.rw; // ★ 服务端签名令牌
         slotEl.dataset.cid = cid || '';
-        slotEl.innerHTML = bid.adm;
-        if (h.onRender) h.onRender(bid, rw);
-        if (cid) { fetch(cfg.base + '/ssp/click?cid=' + cid + '&imp=' + imp + '&pub=' + encodeURIComponent(cfg.site)).catch(function () {}); }
+        if (cid) fetch(cfg.base + '/ssp/click?cid=' + cid + '&imp=' + imp + '&pub=' + encodeURIComponent(cfg.site)).catch(function () {});
 
-        var video = slotEl.querySelector('video');
+        var video = null, tracking = {};
+        var vastMeta = null;
+
+        if (isXml(bid.adm)) {
+          // ===== VAST 4.0 分支 =====
+          vastMeta = parseVast(bid.adm);
+          if (vastMeta && vastMeta.mediaUrl) {
+            tracking = vastMeta.tracking || {};
+            slotEl.innerHTML = '';
+            var wrap = document.createElement('div');
+            wrap.style.cssText = "width:320px;font-family:'Microsoft YaHei',sans-serif;background:#0f172a;color:#fff;border-radius:12px;padding:12px";
+            var t = document.createElement('div');
+            t.style.cssText = 'font-size:12px;opacity:.8';
+            t.textContent = '激励视频广告 - VAST 4.0';
+            var tip = document.createElement('div');
+            tip.style.cssText = 'margin-top:8px;font-size:12px;color:#fbbf24';
+            tip.textContent = '看完视频即可领取奖励';
+            video = document.createElement('video');
+            video.src = vastMeta.mediaUrl;
+            video.controls = true;
+            video.playsInline = true;
+            video.style.cssText = 'width:100%;border-radius:8px;background:#000';
+            var cap = document.createElement('div');
+            cap.style.cssText = 'font-size:15px;font-weight:700;margin:6px 0';
+            cap.textContent = (h.title) || '激励视频';
+            wrap.appendChild(t); wrap.appendChild(cap); wrap.appendChild(video); wrap.appendChild(tip);
+            slotEl.appendChild(wrap);
+          }
+        }
+        if (!video) {
+          // ===== HTML 创意回退分支 =====
+          slotEl.innerHTML = bid.adm;
+          video = slotEl.querySelector('video');
+        }
+        if (h.onRender) h.onRender(bid, rw, { admType: vastMeta ? 'vast4' : 'html', duration: vastMeta && vastMeta.duration });
+
         if (!video) { if (h.onError) h.onError('NO_VIDEO'); return { ok: false, reason: 'NO_VIDEO' }; }
 
+        var fired = {};
+        function fire(ev) { if (fired[ev]) return; fired[ev] = 1; ping(tracking[ev]); if (h.onVastEvent) h.onVastEvent(ev); }
         var claimed = false;
         function tryClaim() { if (claimed) return; claimed = true; claim(cfg, cid, imp, rw, video, h); }
 
-        video.addEventListener('play', function () { if (h.onStart) h.onStart(video); });
-        video.addEventListener('ended', tryClaim);
+        fire('impression');
+        video.addEventListener('play', function () { fire('start'); if (h.onStart) h.onStart(video); });
         video.addEventListener('pause', function () { if (!claimed && h.onSkip) h.onSkip(video); });
         video.addEventListener('timeupdate', function () {
-          if (!claimed && video.duration && video.currentTime / video.duration >= 0.95) tryClaim();
+          if (!video.duration) return;
+          var r = video.currentTime / video.duration;
+          if (r >= 0.25) fire('firstQuartile');
+          if (r >= 0.50) fire('midpoint');
+          if (r >= 0.75) fire('thirdQuartile');
+          if (r >= 0.95) tryClaim();
         });
-        return { ok: true, cid: cid, imp: imp, rw: rw, video: video };
+        video.addEventListener('ended', function () { fire('complete'); tryClaim(); });
+
+        return { ok: true, cid: cid, imp: imp, rw: rw, video: video, admType: vastMeta ? 'vast4' : 'html' };
       })
       .catch(function (e) {
         slotEl.innerHTML = '<div style="padding:10px;color:#b91c1c">竞价请求失败：' + (e && e.message) + '</div>';
@@ -104,5 +168,5 @@
       });
   }
 
-  window.RW_SDK = { show: show, version: '0.2.0' };
+  window.RW_SDK = { show: show, version: '0.3.0' };
 })();
