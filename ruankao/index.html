@@ -49,7 +49,7 @@
     <button type="submit">提交，免费领取资料包</button>
   </form>
   <p id="ok" class="hint"></p>
-  <p class="hint">提交后 24 小时内发到你的邮箱 / 微信。</p>
+  <p class="hint">提交即记录线索；资料包可直接从下方「百度云」提取码立即领取，不必等 24 小时。</p>
 </div>
 
 <!-- 百度云直接下载：点获取=记转化(conv_log)，再展示提取码 -->
@@ -86,10 +86,21 @@ document.getElementById('lead').onsubmit = async (e) => {
   e.preventDefault();
   var slot = document.querySelector('.ad-slot');
   if (window.PUB_SDK && slot.dataset.cid) {
-    await PUB_SDK.trackConversion(slot.dataset.cid, slot.dataset.imp);
+    await PUB_SDK.trackConversion(slot.dataset.cid, slot.dataset.imp); // 广告侧转化归因
   }
   var chan = new URLSearchParams(location.search).get('utm_source') || 'direct';
-  document.getElementById('ok').textContent = '已提交 ✅ 资料会发给你（渠道=' + chan + '）';
+  var contact = document.getElementById('contact').value.trim();
+  // 关键：把邮箱/微信真正回传给 ADX 存下来（此前只记了广告转化、没存联系方式，线索在这里断了）
+  var base = (window.PUB_SDK && PUB_SDK.config && PUB_SDK.config.base) || 'https://calendar.dellai.xyz';
+  try {
+    await fetch(base + '/api/public/ruankao-lead', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contact: contact, channel: chan, source: location.host })
+    });
+  } catch (err) {} // 回传失败也不阻塞领资料
+  document.getElementById('ok').textContent = '已提交 ✅ 渠道=' + chan + '；资料在下面「百度云」直接领';
+  document.getElementById('codeBox').style.display = 'block'; // 交付即时化，不靠 24h 人工
+  document.getElementById('getCode').textContent = '已领取 ✓';
   if (window.reportConv) window.reportConv(); // 平台转化上报（oCPA 优化用）
 };
 document.getElementById('getCode').onclick = async () => {
